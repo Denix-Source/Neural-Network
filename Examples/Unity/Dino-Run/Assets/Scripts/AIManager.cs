@@ -52,6 +52,9 @@ public class AIManager : MonoBehaviour
 
     //Current score made by current generation's dinos
     public float currentScore = 0;
+
+    //When cactus reaches this position, new cactus will be spawned
+    public int CactusSpawnPos;
     
     void Start()
     {
@@ -63,12 +66,17 @@ public class AIManager : MonoBehaviour
             Dinos[i] = Instantiate(DinoPrefab, dinoSpawn);
             Dinos[i].GetComponent<Dino>().CactusQueue = Queue;
         }
+
+        //Init neural network so if new generation's neural network is null it won't throw exception
+        bestNet = new NeuralNetwork(3, new int[2] { 2, 2 }, 1, Random.Range, ActivationFunctions.Step);
     }
     
     void Update()
     {
         //Add delta time to the currentScore, so it equals to that generation's current score
-        currentScore += Time.deltaTime;
+        //(If all dinos were destroyed score won't be updated else best dino of the first gen won't be found)
+        if(failedDinoCount < Dinos.Length)
+            currentScore += Time.deltaTime;
 
         //If current generation's score is higher than highest score made, update the high
         //score variable and text
@@ -96,8 +104,8 @@ public class AIManager : MonoBehaviour
             }
         }
 
-        //If lastest cactus' x is equals/smaller than 21 spawn new one
-        if(Queue[Queue.Length - 1].transform.position.x < 21)
+        //If lastest cactus' x is equals/smaller than cactus spawn pos, spawn new one
+        if(Queue[Queue.Length - 1].transform.position.x <= CactusSpawnPos)
         {
             //A game speed will increase in every 5 cactus
             if (++spawnCount >= 5)
@@ -105,8 +113,8 @@ public class AIManager : MonoBehaviour
                 //Reset the counter
                 spawnCount = 0;
 
-                //If game speed is faster than 420, it will be impossible to play
-                if(gameSpeed < 420)
+                //If game speed is faster than 300, it will be impossible to play
+                if(gameSpeed < 300)
                     gameSpeed += 20;
             }
 
